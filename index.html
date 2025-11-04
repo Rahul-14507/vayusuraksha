@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vayu Suraksha</title>
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="css/main.css">
+</head>
+<body>
+    <!-- Top Navbar -->
+    <nav class="navbar">
+        <div class="navbar-left">
+            <div class="logo">
+                <i class="fas fa-wind"></i>
+                <span class="logo-text">Vayu Suraksha</span>
+            </div>
+        </div>
+        <div class="navbar-right">
+            <a href="public-login.html" class="nav-btn report-btn">
+                <i class="fa-solid fa-triangle-exclamation" style="color: #FFD43B;"></i>
+                Report Issue
+            </a>
+            <a href="ngo-login.html" class="nav-btn ngo-btn">
+                <i class="fas fa-hand-holding-heart"></i>
+                NGO Login
+            </a>
+            <a href="govt-login.html" class="nav-btn govt-btn">
+                <i class="fas fa-building-columns"></i>
+                Government Login
+            </a>
+        </div>
+    </nav>
+
+    <!-- Left Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <h3><i class="fas fa-chart-line"></i> Control Panel</h3>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="sidebar-section">
+            <h4>Quick Actions</h4>
+            <button class="sidebar-btn" id="toggleHotspots">
+                <i class="fas fa-map-marker-alt"></i>
+                Toggle Hotspots
+            </button>
+            <button class="sidebar-btn" id="eduDoc">
+                <i class="fas fa-graduation-cap"></i>
+                Edu Doc
+            </button>
+            <button class="sidebar-btn" id="showTrends">
+                <i class="fas fa-chart-area"></i>
+                Show AQ Trends
+            </button>
+            <button class="sidebar-btn" id="refreshData">
+                <i class="fas fa-sync-alt"></i>
+                Refresh Data
+            </button>
+        </div>
+
+                <!-- AQI Legend -->
+        <div class="sidebar-section">
+            <h4>AQI Legend</h4>
+            <div class="legend">
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #00e400;"></div>
+                    <div class="legend-info">
+                        <span class="legend-label">Good</span>
+                        <span class="legend-range">0-50</span>
+                    </div>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #ffff00;"></div>
+                    <div class="legend-info">
+                        <span class="legend-label">Satisfactory</span>
+                        <span class="legend-range">51-100</span>
+                    </div>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #ff7e00;"></div>
+                    <div class="legend-info">
+                        <span class="legend-label">Moderate</span>
+                        <span class="legend-range">101-200</span>
+                    </div>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #ff0000;"></div>
+                    <div class="legend-info">
+                        <span class="legend-label">Poor</span>
+                        <span class="legend-range">201-300</span>
+                    </div>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #8f3f97;"></div>
+                    <div class="legend-info">
+                        <span class="legend-label">Very Poor</span>
+                        <span class="legend-range">301-400</span>
+                    </div>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #7e0023;"></div>
+                    <div class="legend-info">
+                        <span class="legend-label">Severe</span>
+                        <span class="legend-range">401+</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Major Cities Widget -->
+        <div class="sidebar-section">
+            <h4>Major Cities AQI</h4>
+            <div class="city-list" id="cityList">
+                <div class="city-item loading">
+                    <span class="city-name">Loading...</span>
+                    <span class="city-aqi">--</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer Info -->
+        <div class="sidebar-footer">
+            <p><i class="fas fa-info-circle"></i> Data updates every 5 minutes</p>
+            <p><i class="fas fa-database"></i> Source: OpenAQ API</p>
+        </div>
+    </aside>
+
+    <!-- Map Container (Full Background) -->
+    <div id="map"></div>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="loader-container">
+            <div class="loader"></div>
+            <p>Loading air quality data...</p>
+        </div>
+    </div>
+
+    <!-- Compare Cities Modal -->
+    <div id="compareModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-balance-scale"></i> Compare Cities</h2>
+                <button class="close-modal" onclick="closeCompareModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="compare-grid" id="compareGrid">
+                    <!-- Populated by JavaScript -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Trends Modal -->
+    <div id="trendsModal" class="modal">
+        <div class="modal-content trends-modal">
+            <div class="modal-header">
+                <h2><i class="fas fa-chart-area"></i> Air Quality Trends</h2>
+                <button class="close-modal" onclick="closeTrendsModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="trends-controls">
+                    <select id="trendCity" class="trend-select">
+                        <option value="Delhi">Delhi</option>
+                        <option value="Mumbai">Mumbai</option>
+                        <option value="Bangalore">Bangalore</option>
+                        <option value="Chennai">Chennai</option>
+                        <option value="Kolkata">Kolkata</option>
+                        <option value="Hyderabad">Hyderabad</option>
+                    </select>
+                    <select id="trendDuration" class="trend-select">
+                        <option value="7">Last 7 Days</option>
+                        <option value="14">Last 14 Days</option>
+                        <option value="30">Last 30 Days</option>
+                    </select>
+                </div>
+                <canvas id="trendChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toggle Sidebar Button (Mobile) -->
+    <button class="toggle-sidebar" id="toggleSidebar">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <!-- Leaflet JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+    
+    <!-- Chart.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    
+    <!-- Custom Scripts -->
+    <script src="js/config.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/map.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>

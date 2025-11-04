@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NGO Dashboard - Vayu Suraksha</title>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="css/ngo.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="header-content">
+                <a href="index.html" class="back-link">
+                    <i class="fas fa-arrow-left"></i> Back to Dashboard
+                </a>
+                <div class="brand-logo">
+                    <i class="fas fa-hand-holding-heart"></i>
+                    <h1>NGO Portal</h1>
+                </div>
+                <p class="welcome-text" id="welcomeText">Welcome to the NGO Dashboard</p>
+            </div>
+        </header>
+
+        <div class="main-content">
+            <div class="dashboard-header">
+                <h2>
+                    <i class="fas fa-clipboard-list"></i>
+                    Public Reports
+                </h2>
+                <button class="refresh-btn" onclick="loadReports()">
+                    <i class="fas fa-sync-alt"></i>
+                    Refresh
+                </button>
+            </div>
+
+            <!-- Statistics Cards -->
+            <div class="stats-container">
+                <div class="stat-card">
+                    <h3>Total Reports</h3>
+                    <div class="stat-value" id="totalReports">0</div>
+                    <div class="stat-label">All time submissions</div>
+                </div>
+                <div class="stat-card">
+                    <h3>This Week</h3>
+                    <div class="stat-value" id="weekReports">0</div>
+                    <div class="stat-label">Reports in last 7 days</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Today</h3>
+                    <div class="stat-value" id="todayReports">0</div>
+                    <div class="stat-label">Reports today</div>
+                </div>
+            </div>
+
+            <!-- Reports List -->
+            <div id="reportsList" class="reports-grid">
+                <!-- Reports will be dynamically loaded here -->
+            </div>
+
+            <!-- Empty State -->
+            <div id="emptyState" class="empty-state" style="display: none;">
+                <i class="fas fa-inbox"></i>
+                <h3>No Reports Yet</h3>
+                <p>When citizens submit air quality reports, they will appear here. Check back soon or encourage your community to report environmental concerns.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Get organization name from URL if available
+        const urlParams = new URLSearchParams(window.location.search);
+        const orgName = urlParams.get('org');
+        if (orgName) {
+            document.getElementById('welcomeText').textContent = `Welcome, ${orgName}!`;
+        }
+
+        // Load reports from localStorage
+        function loadReports() {
+            const reportsList = document.getElementById('reportsList');
+            const emptyState = document.getElementById('emptyState');
+            
+            try {
+                const reports = JSON.parse(localStorage.getItem('reports')) || [];
+                
+                if (reports.length === 0) {
+                    reportsList.style.display = 'none';
+                    emptyState.style.display = 'block';
+                    updateStats(reports);
+                    return;
+                }
+                
+                // Sort reports by timestamp (newest first)
+                reports.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+                
+                reportsList.style.display = 'grid';
+                emptyState.style.display = 'none';
+                
+                reportsList.innerHTML = reports.map((report, index) => {
+                    const date = new Date(report.timestamp);
+                    const formattedDate = date.toLocaleDateString('en-IN', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+                    
+                    return `
+                        <div class="report-card" style="animation-delay: ${index * 0.1}s">
+                            <div class="report-header">
+                                <div class="report-location">
+                                    <i class="fas fa-map-marker-alt"></i>
+                                    ${escapeHtml(report.location)}
+                                </div>
+                                <div class="report-date">
+                                    <i class="fas fa-clock"></i>
+                                    ${formattedDate}
+                                </div>
+                            </div>
+                            
+                            <div class="report-meta">
+                                <div class="meta-item">
+                                    <i class="fas fa-user"></i>
+                                    <div>
+                                        <div class="meta-label">Reporter</div>
+                                        <div class="meta-value">${escapeHtml(report.name)}</div>
+                                    </div>
+                                </div>
+                                <div class="meta-item">
+                                    <i class="fas fa-envelope"></i>
+                                    <div>
+                                        <div class="meta-label">Email</div>
+                                        <div class="meta-value">${escapeHtml(report.email)}</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="report-complaint">
+                                <h4><i class="fas fa-exclamation-triangle"></i> Issue Description</h4>
+                                <div class="complaint-text">${escapeHtml(report.complaint)}</div>
+                            </div>
+                            
+                            <div class="report-actions">
+                                <button class="action-btn action-btn-primary" onclick="takeAction('${escapeHtml(report.location)}')">
+                                    <i class="fas fa-check-circle"></i>
+                                    Take Action
+                                </button>
+                                <button class="action-btn action-btn-secondary" onclick="contactReporter('${escapeHtml(report.email)}')">
+                                    <i class="fas fa-paper-plane"></i>
+                                    Contact Reporter
+                                </button>
+                                <button class="action-btn action-btn-secondary" onclick="viewLocation('${escapeHtml(report.location)}')">
+                                    <i class="fas fa-map"></i>
+                                    View on Map
+                                </button>
+                                <button class="action-btn action-btn-danger" onclick="markAsCompleted(${index})">
+                                    <i class="fas fa-trash-alt"></i>
+                                    Mark as Completed
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+                
+                updateStats(reports);
+                
+            } catch (error) {
+                console.error('Error loading reports:', error);
+                reportsList.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-exclamation-circle" style="color: #ef4444;"></i>
+                        <h3>Error Loading Reports</h3>
+                        <p>There was a problem loading the reports. Please refresh the page.</p>
+                    </div>
+                `;
+            }
+        }
+        
+        // Update statistics
+        function updateStats(reports) {
+            const now = new Date();
+            const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            const weekStart = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+            
+            const todayCount = reports.filter(r => new Date(r.timestamp) >= todayStart).length;
+            const weekCount = reports.filter(r => new Date(r.timestamp) >= weekStart).length;
+            
+            document.getElementById('totalReports').textContent = reports.length;
+            document.getElementById('todayReports').textContent = todayCount;
+            document.getElementById('weekReports').textContent = weekCount;
+        }
+        
+        // Escape HTML to prevent XSS
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        // Action handlers
+        function takeAction(location) {
+            alert(`Initiating action for: ${location}\n\nThis feature will coordinate with local teams to investigate and address the reported issue.`);
+        }
+        
+        function contactReporter(email) {
+            window.location.href = `mailto:${email}?subject=Re: Your Air Quality Report&body=Dear Reporter,%0D%0A%0D%0AThank you for submitting your air quality concern. We are reviewing your report and will take appropriate action.%0D%0A%0D%0ABest regards,%0D%0ANGO Team`;
+        }
+        
+        function viewLocation(location) {
+            // Redirect to main map and search for the location
+            window.location.href = `index.html?search=${encodeURIComponent(location)}`;
+        }
+        
+        // Mark report as completed and delete it
+        function markAsCompleted(index) {
+            if (!confirm('Are you sure you want to mark this report as completed?\n\nThis action will permanently remove the report.')) {
+                return;
+            }
+            
+            try {
+                const reports = JSON.parse(localStorage.getItem('reports')) || [];
+                
+                if (index >= 0 && index < reports.length) {
+                    const deletedReport = reports[index];
+                    reports.splice(index, 1);
+                    localStorage.setItem('reports', JSON.stringify(reports));
+                    
+                    // Show success notification
+                    showNotification(`✅ Report from ${deletedReport.location} marked as completed and removed.`);
+                    
+                    // Reload the reports list
+                    loadReports();
+                } else {
+                    showNotification('❌ Error: Invalid report index.', 'error');
+                }
+            } catch (error) {
+                console.error('Error deleting report:', error);
+                showNotification('❌ Error removing report. Please try again.', 'error');
+            }
+        }
+        
+        // Show notification popup
+        function showNotification(message, type = 'success') {
+            // Create notification element
+            const notification = document.createElement('div');
+            notification.className = `notification notification-${type}`;
+            notification.innerHTML = `
+                <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i>
+                <span>${message}</span>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            // Trigger animation
+            setTimeout(() => notification.classList.add('show'), 10);
+            
+            // Remove after 4 seconds
+            setTimeout(() => {
+                notification.classList.remove('show');
+                setTimeout(() => notification.remove(), 300);
+            }, 4000);
+        }
+        
+        // Load reports on page load
+        document.addEventListener('DOMContentLoaded', loadReports);
+    </script>
+</body>
+</html>

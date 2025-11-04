@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Government Dashboard - Vayu Suraksha</title>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="css/gov.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="header-content">
+                <a href="index.html" class="back-link">
+                    <i class="fas fa-arrow-left"></i> Back to Dashboard
+                </a>
+                <div class="brand-logo">
+                    <i class="fas fa-building-columns"></i>
+                    <h1>Government Portal</h1>
+                </div>
+                <p class="welcome-text">Central Air Quality Monitoring System</p>
+            </div>
+        </header>
+
+        <div class="main-content">
+            <div class="dashboard-header">
+                <h2>
+                    <i class="fas fa-chart-pie"></i>
+                    Public Reports Overview
+                </h2>
+                <div class="header-actions">
+                    <input type="text" id="searchInput" class="search-input" placeholder="Search by location or keyword...">
+                    <button class="refresh-btn" onclick="loadReports()">
+                        <i class="fas fa-sync-alt"></i>
+                        Refresh Data
+                    </button>
+                </div>
+            </div>
+
+            <!-- Summary Statistics -->
+            <div class="stats-container">
+                <div class="stat-card stat-card-blue">
+                    <div class="stat-icon">
+                        <i class="fas fa-clipboard-list"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3>Total Reports</h3>
+                        <div class="stat-value" id="totalReports">0</div>
+                        <div class="stat-label">All submissions</div>
+                    </div>
+                </div>
+                
+                <div class="stat-card stat-card-green">
+                    <div class="stat-icon">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3>This Week</h3>
+                        <div class="stat-value" id="weekReports">0</div>
+                        <div class="stat-label">Last 7 days</div>
+                    </div>
+                </div>
+                
+                <div class="stat-card stat-card-orange">
+                    <div class="stat-icon">
+                        <i class="fas fa-calendar-day"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3>Today</h3>
+                        <div class="stat-value" id="todayReports">0</div>
+                        <div class="stat-label">Received today</div>
+                    </div>
+                </div>
+                
+                <div class="stat-card stat-card-purple">
+                    <div class="stat-icon">
+                        <i class="fas fa-map-marked-alt"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3>Locations</h3>
+                        <div class="stat-value" id="uniqueLocations">0</div>
+                        <div class="stat-label">Unique areas</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filter Options -->
+            <div class="filter-section">
+                <h3><i class="fas fa-filter"></i> Filter Reports</h3>
+                <div class="filter-controls">
+                    <select id="timeFilter" class="filter-select">
+                        <option value="all">All Time</option>
+                        <option value="today">Today</option>
+                        <option value="week">This Week</option>
+                        <option value="month">This Month</option>
+                    </select>
+                    <select id="sortFilter" class="filter-select">
+                        <option value="newest">Newest First</option>
+                        <option value="oldest">Oldest First</option>
+                        <option value="location">By Location</option>
+                    </select>
+                    <button class="filter-btn" onclick="applyFilters()">
+                        <i class="fas fa-check"></i>
+                        Apply Filters
+                    </button>
+                    <button class="filter-btn filter-btn-clear" onclick="clearFilters()">
+                        <i class="fas fa-times"></i>
+                        Clear
+                    </button>
+                </div>
+            </div>
+
+            <!-- Reports List -->
+            <div class="reports-section">
+                <h3><i class="fas fa-list"></i> Detailed Reports</h3>
+                <div id="reportsList" class="reports-grid">
+                    <!-- Reports will be dynamically loaded here -->
+                </div>
+            </div>
+
+            <!-- Empty State -->
+            <div id="emptyState" class="empty-state" style="display: none;">
+                <i class="fas fa-inbox"></i>
+                <h3>No Reports Found</h3>
+                <p>No citizen reports match your current filters. Adjust your search criteria or wait for new submissions.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let allReports = [];
+        let filteredReports = [];
+
+        // Load reports from localStorage
+        function loadReports() {
+            try {
+                allReports = JSON.parse(localStorage.getItem('reports')) || [];
+                filteredReports = [...allReports];
+                
+                updateStatistics();
+                displayReports(filteredReports);
+                
+            } catch (error) {
+                console.error('Error loading reports:', error);
+                showError();
+            }
+        }
+
+        // Update statistics
+        function updateStatistics() {
+            const now = new Date();
+            const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            const weekStart = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+            
+            const todayCount = allReports.filter(r => new Date(r.timestamp) >= todayStart).length;
+            const weekCount = allReports.filter(r => new Date(r.timestamp) >= weekStart).length;
+            const uniqueLocs = new Set(allReports.map(r => r.location)).size;
+            
+            document.getElementById('totalReports').textContent = allReports.length;
+            document.getElementById('todayReports').textContent = todayCount;
+            document.getElementById('weekReports').textContent = weekCount;
+            document.getElementById('uniqueLocations').textContent = uniqueLocs;
+        }
+
+        // Display reports
+        function displayReports(reports) {
+            const reportsList = document.getElementById('reportsList');
+            const emptyState = document.getElementById('emptyState');
+            
+            if (reports.length === 0) {
+                reportsList.style.display = 'none';
+                emptyState.style.display = 'flex';
+                return;
+            }
+            
+            reportsList.style.display = 'grid';
+            emptyState.style.display = 'none';
+            
+            reportsList.innerHTML = reports.map((report, index) => {
+                const date = new Date(report.timestamp);
+                const formattedDate = date.toLocaleDateString('en-IN', {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+                
+                return `
+                    <div class="report-card">
+                        <div class="report-header">
+                            <div class="report-badge">Report #${allReports.indexOf(report) + 1}</div>
+                            <div class="report-timestamp">
+                                <i class="fas fa-clock"></i>
+                                ${formattedDate}
+                            </div>
+                        </div>
+                        
+                        <div class="report-body">
+                            <div class="report-location">
+                                <i class="fas fa-map-marker-alt"></i>
+                                <strong>${escapeHtml(report.location)}</strong>
+                            </div>
+                            
+                            <div class="report-details">
+                                <div class="detail-item">
+                                    <i class="fas fa-user"></i>
+                                    <span><strong>Reporter:</strong> ${escapeHtml(report.name)}</span>
+                                </div>
+                                <div class="detail-item">
+                                    <i class="fas fa-envelope"></i>
+                                    <span><strong>Email:</strong> ${escapeHtml(report.email)}</span>
+                                </div>
+                            </div>
+                            
+                            <div class="report-complaint">
+                                <div class="complaint-label">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                    Issue Description
+                                </div>
+                                <div class="complaint-text">${escapeHtml(report.complaint)}</div>
+                            </div>
+                        </div>
+                        
+                        <div class="report-footer">
+                            <button class="action-btn-gov" onclick="viewOnMap('${escapeHtml(report.location)}')">
+                                <i class="fas fa-map"></i>
+                                View on Map
+                            </button>
+                            <button class="action-btn-gov" onclick="exportReport(${allReports.indexOf(report)})">
+                                <i class="fas fa-download"></i>
+                                Export
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Apply filters
+        function applyFilters() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const timeFilter = document.getElementById('timeFilter').value;
+            const sortFilter = document.getElementById('sortFilter').value;
+            
+            let filtered = [...allReports];
+            
+            // Search filter
+            if (searchTerm) {
+                filtered = filtered.filter(r => 
+                    r.location.toLowerCase().includes(searchTerm) ||
+                    r.complaint.toLowerCase().includes(searchTerm) ||
+                    r.name.toLowerCase().includes(searchTerm)
+                );
+            }
+            
+            // Time filter
+            const now = new Date();
+            const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            const weekStart = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+            const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+            
+            if (timeFilter === 'today') {
+                filtered = filtered.filter(r => new Date(r.timestamp) >= todayStart);
+            } else if (timeFilter === 'week') {
+                filtered = filtered.filter(r => new Date(r.timestamp) >= weekStart);
+            } else if (timeFilter === 'month') {
+                filtered = filtered.filter(r => new Date(r.timestamp) >= monthStart);
+            }
+            
+            // Sort
+            if (sortFilter === 'newest') {
+                filtered.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+            } else if (sortFilter === 'oldest') {
+                filtered.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+            } else if (sortFilter === 'location') {
+                filtered.sort((a, b) => a.location.localeCompare(b.location));
+            }
+            
+            filteredReports = filtered;
+            displayReports(filteredReports);
+        }
+
+        // Clear filters
+        function clearFilters() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('timeFilter').value = 'all';
+            document.getElementById('sortFilter').value = 'newest';
+            
+            filteredReports = [...allReports];
+            displayReports(filteredReports);
+        }
+
+        // Search in real-time
+        document.addEventListener('DOMContentLoaded', () => {
+            loadReports();
+            
+            document.getElementById('searchInput').addEventListener('input', applyFilters);
+        });
+
+        // Utility functions
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function viewOnMap(location) {
+            window.location.href = `index.html?search=${encodeURIComponent(location)}`;
+        }
+
+        function exportReport(index) {
+            const report = allReports[index];
+            const dataStr = JSON.stringify(report, null, 2);
+            const dataBlob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `report-${report.location}-${Date.now()}.json`;
+            link.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function showError() {
+            document.getElementById('reportsList').innerHTML = `
+                <div class="empty-state">
+                    <i class="fas fa-exclamation-circle" style="color: #ef4444;"></i>
+                    <h3>Error Loading Data</h3>
+                    <p>Unable to load reports. Please refresh the page.</p>
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>

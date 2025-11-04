@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Report Issue - Vayu Suraksha</title>
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="css/login.css">
+    <link rel="stylesheet" href="css/location-map.css">
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-left report-theme">
+            <div class="login-branding">
+                <a href="index.html" class="back-link">
+                    <i class="fas fa-arrow-left"></i> Back to Dashboard
+                </a>
+                <div class="brand-logo">
+                    <i class="fas fa-wind"></i>
+                    <h1>Vayu Suraksha</h1>
+                </div>
+                <p class="brand-tagline">Make a report for NGO'S to take action</p>
+                
+                <!-- Mini Location Map -->
+                <div class="map-container">
+                    <div class="map-header">
+                        <i class="fas fa-map-marker-alt"></i>
+                        <span>Location Preview</span>
+                    </div>
+                    <div id="locationMap"></div>
+                    <div class="map-status" id="mapStatus">
+                        <i class="fas fa-info-circle"></i>
+                        <span>Type a location to preview on map</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="login-right">
+            <div class="login-card">
+                <div class="login-header">
+                    <i class="fa-solid fa-triangle-exclamation header-icon" style="color: #FFD43B;"></i>
+                    <h2>Make a report</h2>
+                    <p>Post and spread awareness</p>
+                </div>
+                
+                <form class="login-form" onsubmit="handleReport(event)">
+                    <div class="form-group">
+                        <label for="name">
+                            <i class="fas fa-user"></i>
+                            Name
+                        </label>
+                        <input 
+                            type="text" 
+                            id="name" 
+                            name="name" 
+                            placeholder="Your name"
+                            required
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label for="email">
+                            <i class="fas fa-envelope"></i>
+                            Email Address
+                        </label>
+                        <input 
+                            type="email" 
+                            id="email" 
+                            name="email" 
+                            placeholder="your@email.com"
+                            required
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label for="location">
+                            <i class="fas fa-location-dot"></i>
+                            Location
+                        </label>
+                        <input 
+                            type="text"
+                            id="location" 
+                            name="location" 
+                            placeholder="Enter your location (city, area, landmark)"
+                            required
+                        >
+                        <small style="color: #718096; font-size: 12px; margin-top: 4px; display: block;">
+                            <i class="fas fa-lightbulb" style="color: #f59e0b;"></i>
+                            Try typing: Delhi, Mumbai, Hyderabad, etc.
+                        </small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="complaint">
+                            <i class="fas fa-triangle-exclamation"></i>
+                            Issue Description
+                        </label>
+                        <textarea 
+                            id="complaint" 
+                            rows="5" 
+                            name="complaint" 
+                            placeholder="Describe the air quality issue you're experiencing..."
+                            required
+                        ></textarea> 
+                    </div>
+                    
+                    <button type="submit" class="login-btn ngo-btn">
+                        <i class="fas fa-paper-plane"></i>
+                        Submit Report
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Leaflet JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+    
+    <!-- Custom Scripts -->
+    <script src="js/location-map.js"></script>
+    <script src="js/login.js"></script>
+</body>
+</html>
